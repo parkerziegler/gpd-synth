@@ -1,6 +1,8 @@
 .ipynb_checkpoints
 .DS_store
 
+.venv
+
 # Added by cargo
 
 /target
