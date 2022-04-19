@@ -1,6 +1,11 @@
 from collections.abc import Iterator
 import threading
-from typing import Callable, Generic, TypeVar
+from typing import Tuple, Generic, TypeVar
+from concurrent.futures import ThreadPoolExecutor
+
+from pandas import DataFrame
+
+from synth_tools import check_candidate
 
 T = TypeVar('T')
 R = TypeVar('R')
@@ -15,12 +20,15 @@ class threadsafe(Generic[T], Iterator[T]):
             return self.inner.__next__()
 
 
-def split_over_threads(thread_count: int, producer: threadsafe[T], *consumers: list[Callable[[T], R]]):
-    from concurrent.futures import ThreadPoolExecutor
-    from multiprocessing import Queue
-    out = Queue()
+def mp_check_candidate(result, target, signature, queue: list):
+    if check_candidate(result, target):
+        queue.append(signature)
+
+
+def split_over_threads(thread_count: int, producer: threadsafe[Tuple[DataFrame, object]], target: DataFrame):
+    out = list()
     with ThreadPoolExecutor(thread_count) as executor:
-        for o in producer:
-            for c in consumers:
-                res = executor.submit(c, o)
-                res.add_done_callback(print)
+        for res, sig in producer:
+            executor.submit(mp_check_candidate, res, target, sig, out)
+        executor.shutdown(wait=True, cancel_futures=False)
+    return out
