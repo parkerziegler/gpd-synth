@@ -18,18 +18,18 @@ def print_all_synth(synth: Iterable[Optional[object]]) -> object:
     print("Done.")
 
 
-def synth_slim(res: GDF, target: GDF) -> None | GDF:
+def slim(res: GDF, target: GDF) -> None | GDF:
     try:
         return res[target.columns]
     except KeyError:
         return None
 
 def check_candidate(result: pd.DataFrame, target: pd.DataFrame) -> bool:
-    slimmed = synth_slim(result, target)
+    slimmed = slim(result, target)
     return target.equals(slimmed)
 
 
-def synth_sjoin(l: GDF, r: GDF) -> Iterable[GDF]:
+def sjoin(l: GDF, r: GDF) -> Iterable[GDF]:
     query_preds = l.sindex.valid_query_predicates & r.sindex.valid_query_predicates
     for h in ("left", "right", "inner"):
         for p in query_preds:
@@ -48,19 +48,35 @@ def cols_by_dtype(frame: pd.DataFrame) -> dict[type, set[str]]:
     return dict(out)
 
 
-def col_mapping_gen(
-    l: pd.DataFrame, r: pd.DataFrame
-) -> Iterable[tuple[str, str]]:
-    "Returns a generator of pairs of potentially equal column names"
+def merge(l: pd.DataFrame, r: pd.DataFrame):
     l_types = cols_by_dtype(l)
     r_types = cols_by_dtype(r)
     for k, l_v in l_types.items():
         if r_v := r_types.get(k, None):
-            yield from product(l_v, r_v)
+            for l_col, r_col in product(l_v, r_v):
+                # 'cross' throws weird exception
+                for h in ("left", "right", "inner", "outer"):  
+                    yield pd.merge(
+                            l, r, 
+                            how=h, 
+                            left_on=l_col, right_on=r_col,
+                        ), ('merge', h, l_col, r_col)
 
 
-def synth_merge(l: pd.DataFrame, r: pd.DataFrame):
-    for l_col, r_col in col_mapping_gen(l, r):
-        for h in ("left", "right", "inner", "outer"):  # 'cross' throws weird exception
-            yield pd.merge(l, r, how=h, left_on=l_col, right_on=r_col), \
-                ('merge', h, l_col, r_col)
+def binop(l: pd.DataFrame, r: pd.DataFrame):
+    merge_gen = merge(l, r)
+    if not isinstance(l, GDF) or not isinstance(r, GDF):
+        yield from merge_gen
+        return
+
+    sjoin_gen = sjoin(l, r)
+    for t0, t1 in zip(merge_gen, sjoin_gen):
+        yield t0
+        yield t1
+    done = ()
+    test = next(merge_gen, done)
+    if test is done:
+        yield from sjoin_gen
+    else:
+        yield test
+        yield from merge_gen
