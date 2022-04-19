@@ -5,7 +5,7 @@ from geopandas import GeoDataFrame as GDF
 
 from collections import defaultdict
 from itertools import product
-from typing import Generator, Iterable, Optional
+from typing import Iterable, Optional
 
 
 def synth_first(synth: Iterable[Optional[object]]) -> Optional[object]:
@@ -24,17 +24,21 @@ def synth_slim(res: GDF, target: GDF) -> None | GDF:
     except KeyError:
         return None
 
+def check_candidate(result: pd.DataFrame, target: pd.DataFrame) -> bool:
+    slimmed = synth_slim(result, target)
+    return target.equals(slimmed)
 
-def synth_sjoin(l: GDF, r: GDF, t: GDF):
+
+def synth_sjoin(l: GDF, r: GDF) -> Iterable[GDF]:
     query_preds = l.sindex.valid_query_predicates & r.sindex.valid_query_predicates
     for h in ("left", "right", "inner"):
         for p in query_preds:
-            res: GDF = gpd.sjoin(l, r, how=h, predicate=p)
-            slimmed = synth_slim(res, t)
-            if t.equals(slimmed):
-                yield ("sjoin", h, p)
-            else:
-                yield None
+            yield gpd.sjoin(l, r, how=h, predicate=p), ('sjoin', h, p)
+
+
+def with_target(synthesizer, t: GDF):
+    for res, signature in synthesizer:
+        yield check_candidate(res, t) and signature
 
 
 def cols_by_dtype(frame: pd.DataFrame) -> dict[type, set[str]]:
@@ -46,7 +50,7 @@ def cols_by_dtype(frame: pd.DataFrame) -> dict[type, set[str]]:
 
 def col_mapping_gen(
     l: pd.DataFrame, r: pd.DataFrame
-) -> Generator[tuple[str, str], None, None]:
+) -> Iterable[tuple[str, str]]:
     "Returns a generator of pairs of potentially equal column names"
     l_types = cols_by_dtype(l)
     r_types = cols_by_dtype(r)
@@ -55,13 +59,8 @@ def col_mapping_gen(
             yield from product(l_v, r_v)
 
 
-def synth_merge(l: pd.DataFrame, r: pd.DataFrame, t: pd.DataFrame):
-    "Trys to merge all columns with matching dtype"
+def synth_merge(l: pd.DataFrame, r: pd.DataFrame):
     for l_col, r_col in col_mapping_gen(l, r):
         for h in ("left", "right", "inner", "outer"):  # 'cross' throws weird exception
-            res = pd.merge(l, r, how=h, left_on=l_col, right_on=r_col)
-            slimmed = synth_slim(res, t)
-            if t.equals(slimmed):
-                yield ("merge", h, l_col, r_col)
-            else:
-                yield None
+            yield pd.merge(l, r, how=h, left_on=l_col, right_on=r_col), \
+                ('merge', h, l_col, r_col)
