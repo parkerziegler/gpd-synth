@@ -22,27 +22,36 @@ input_gdfs = {
 }
 
 def benchmark(src: str):
-    from cProfile import run
+    from cProfile import Profile
     from io import StringIO
     from contextlib import redirect_stdout
+
+    pr = Profile()
+    pr.enable()
+    # sort by total time executing in a function's body (not including sub-calls)
+    pr.run(src)
+    pr.disable()
     
     # don't allow benchmarking to dump in stdio
     f = StringIO()
     with redirect_stdout(f):
-        # benchmark in wrapped stdout, sort by total
-        # time executing in a function's body
-        # (not including sub-calls)
-        run(src, sort='tottime')
+        pr.print_stats(sort='tottime')
     
     # truncate stdout to a dozen lines
     print('\n'.join(f.getvalue().splitlines()[:12]))
 
 
-
-# completed in ~9 secs
-# benchmark('synthesize(input_gdfs, target)')
 # test code:
-# synthesize(input_gdfs, target)
+#   synthesize(input_gdfs, target)
+# completed in:
+#   without dataclass optimization: ~9.1 secs
+#   with    dataclass optimization: ~8.9 secs
+#   with    dataclass and no print: ~8.8 secs
+# benchmark('synthesize(input_gdfs, target)')
 
-# completed in ~0.4 secs
+# test code:
+#   lazy_synthesize(input_gdfs, target)
+# completed in:
+#   without dataclass optimization: ~0.36 secs
+#   with    dataclass optimization: ~0.35 secs
 benchmark('lazy_synthesize(input_gdfs, target)')
