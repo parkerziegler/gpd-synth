@@ -1,5 +1,6 @@
 import geopandas as gpd
 import os
+from synthesize import lazy_synthesize
 
 from synthesize import synthesize
 
@@ -20,7 +21,28 @@ input_gdfs = {
     "ca_power_plants": input_ca_power_plants,
 }
 
-# synthesize(input_gdfs, target)
-import cProfile as cpr
+def benchmark(src: str):
+    from cProfile import run
+    from io import StringIO
+    from contextlib import redirect_stdout
+    
+    # don't allow benchmarking to dump in stdio
+    f = StringIO()
+    with redirect_stdout(f):
+        # benchmark in wrapped stdout, sort by total
+        # time executing in a function's body
+        # (not including sub-calls)
+        run(src, sort='tottime')
+    
+    # truncate stdout to a dozen lines
+    print('\n'.join(f.getvalue().splitlines()[:12]))
 
-print(cpr.run('synthesize(input_gdfs, target)'), sort='tottime')
+
+
+# completed in ~9 secs
+# benchmark('synthesize(input_gdfs, target)')
+# test code:
+# synthesize(input_gdfs, target)
+
+# completed in ~0.4 secs
+benchmark('lazy_synthesize(input_gdfs, target)')
