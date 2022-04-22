@@ -85,3 +85,30 @@ def synthesize(gdfs, target):
             return program
 
     print("No program found!")
+
+
+from geopandas import GeoDataFrame
+
+def lazy_synthesize_all(gdfs: dict[str, GeoDataFrame]):
+    'Generates the simplest programs first, including equivalents.'
+    for gdf_name in gdfs.keys():
+        yield GDF(gdf_name)
+
+    for gdf_name, gdf in gdfs.items():
+        for col in gdf.columns:
+            if col != 'geometry':
+                yield Dissolve(GDF(gdf_name), col)
+
+
+def make_candidate_filter(gdfs: dict[str, GeoDataFrame], target: GeoDataFrame):
+    'Returns a predicate that checks if a `program` over `gdfs` matches `target`'
+    return lambda program: gdfs_equal(evaluate_program(program, gdfs), target)
+
+def lazy_synthesizer(gdfs: dict[str, GeoDataFrame], target: GeoDataFrame):
+    'An iterator over all programs over `gdfs` that match `target`'
+    checker = make_candidate_filter(gdfs, target)
+    return filter(checker, lazy_synthesize_all(gdfs))
+
+def lazy_synthesize(gdfs: dict[str, GeoDataFrame], target: GeoDataFrame):
+    'Lazy counterpart to `synthesize`'
+    print(next(lazy_synthesizer(gdfs, target), 'No program found!'))
