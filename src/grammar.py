@@ -1,13 +1,15 @@
+import geopandas as gpd
+
 from typing import Protocol
 from dataclasses import dataclass
 
-import geopandas as gpd
 
 # The grammar for our synthesis engine.
 #
 # Each part of the grammar is represented as a separate class with __init__, __repr__, and interpret methods.
 # __repr__ provides the string representation to use to display the synthesized program.
 # interpret provides the actual code to execute behind the scenes when evaluating the synthesized program.
+
 
 class GrammarRule(Protocol):
     def interpret(self, gdfs: dict[str, 'GrammarRule']) -> gpd.GeoDataFrame:

@@ -1,8 +1,7 @@
 import geopandas as gpd
 import os
-from synthesize import lazy_synthesize
 
-from synthesize import synthesize
+from synthesize import lazy_synthesize, synthesize
 
 # Load our powerplants geodataframe.
 ca_power_plants = gpd.read_file(
