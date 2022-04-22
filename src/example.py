@@ -20,4 +20,7 @@ input_gdfs = {
     "ca_power_plants": input_ca_power_plants,
 }
 
-synthesize(input_gdfs, target)
+# synthesize(input_gdfs, target)
+import cProfile as cpr
+
+print(cpr.run('synthesize(input_gdfs, target)'), sort='tottime')
