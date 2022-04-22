@@ -1,7 +1,7 @@
 import geopandas as gpd
 import os
 
-from synthesize import synthesize
+from synthesize import lazy_synthesize, synthesize
 
 # Load our powerplants geodataframe.
 ca_power_plants = gpd.read_file(
@@ -20,4 +20,37 @@ input_gdfs = {
     "ca_power_plants": input_ca_power_plants,
 }
 
-synthesize(input_gdfs, target)
+def benchmark(src: str):
+    from cProfile import Profile
+    from io import StringIO
+    from contextlib import redirect_stdout
+
+    pr = Profile()
+    pr.enable()
+    # sort by total time executing in a function's body (not including sub-calls)
+    pr.run(src)
+    pr.disable()
+    
+    # don't allow benchmarking to dump in stdio
+    f = StringIO()
+    with redirect_stdout(f):
+        pr.print_stats(sort='tottime')
+    
+    # truncate stdout to a dozen lines
+    print('\n'.join(f.getvalue().splitlines()[:12]))
+
+
+# test code:
+#   synthesize(input_gdfs, target)
+# completed in:
+#   without dataclass optimization: ~9.1 secs
+#   with    dataclass optimization: ~8.9 secs
+#   with    dataclass and no print: ~8.8 secs
+# benchmark('synthesize(input_gdfs, target)')
+
+# test code:
+#   lazy_synthesize(input_gdfs, target)
+# completed in:
+#   without dataclass optimization: ~0.36 secs
+#   with    dataclass optimization: ~0.35 secs
+benchmark('lazy_synthesize(input_gdfs, target)')
