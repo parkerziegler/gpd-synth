@@ -4,6 +4,11 @@ import os
 from synth_input import GdfBindings
 from synthesize import lazy_synthesize
 
+from inspect import getsource
+from cProfile import Profile
+from io import StringIO
+from contextlib import redirect_stdout
+
 # Load our powerplants geodataframe.
 ca_power_plants = gpd.read_file(
     os.path.abspath("examples/sjoin/data/ca-powerplants.geojson")
@@ -22,10 +27,6 @@ input_gdfs = GdfBindings({
 })
 
 def benchmark(src: str):
-    from cProfile import Profile
-    from io import StringIO
-    from contextlib import redirect_stdout
-
     print('benchmarking: ')
     print('\t', src)
 
@@ -44,20 +45,12 @@ def benchmark(src: str):
     print('\n'.join(f.getvalue().splitlines()[:12]))
 
 
-# test code:
-#   synthesize(input_gdfs, target)
-# completed in:
-#   without dataclass optimization: ~9.1 secs
-#   with    dataclass optimization: ~8.9 secs
-#   with    dataclass and no print: ~8.8 secs
-# benchmark('synthesize(input_gdfs, target)')
+# benchmark_source can only be one line to avoid indentation issues
+def benchmark_source(): lazy_synthesize(input_gdfs, target)
+src = getsource(benchmark_source)
+src = src[src.index(':') + 2:]
 
-# test code:
-#   lazy_synthesize(input_gdfs, target)
-# completed in:
-#   without dataclass optimization: ~0.36 secs
-#   with    dataclass optimization: ~0.35 secs
-benchmark('lazy_synthesize(input_gdfs, target)')
+benchmark(src)
 
 
 ca_counties = gpd.read_file(
@@ -71,4 +64,4 @@ input_gdfs = GdfBindings({
     'ca_power_plants': ca_power_plants,
 })
 
-benchmark('lazy_synthesize(input_gdfs, target)')
+benchmark(src)
