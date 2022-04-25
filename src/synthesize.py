@@ -77,7 +77,7 @@ def make_candidate_filter(gdfs: GdfBindings, target: DataFrame) -> Callable[[Can
     return lambda program: GeoDataFrame.equals(program.interpret(gdfs), target)
 
 
-def lazy_synth(
+def synth_matching(
     synthesizer: Callable[[GdfBindings], CandidateGen], 
     gdfs: GdfBindings, 
     target: DataFrame,
@@ -88,9 +88,25 @@ def lazy_synth(
 
 
 def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None | Candidate:
-    'Lazy counterpart to `synthesize`'
-    out = next(lazy_synth(program, gdfs, target), None)
+    ''' Generates the minimum number of programs to get the first that 
+        matches `target` over `gdfs`
+    '''
+    out = next(synth_matching(program, gdfs, target), None)
     print(out or 'No program found!')
+    return out
+
+
+def synthesize_all(gdfs: GdfBindings, target: DataFrame) -> list[Candidate]:
+    ''' Generates all programs over `gdfs` that match `target`
+
+        Warning: May be *exceedingly* slow! User beware!
+    '''
+    print('Synthesizing all may be very slow!')
+    out = list()
+    for p in synth_matching(program, gdfs, target):
+        print('\t', p)
+        out.append(p)
+    print('Done.')
     return out
 
 
