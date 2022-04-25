@@ -64,12 +64,10 @@ class SJoin(GrammarRule):
     predicate: str
 
     def __repr__(self):
-        return f"gpd.sjoin({self.left}, {self.right}, \
-            how={self.how}, predicate={self.predicate})"
+        return f"gpd.sjoin('{self.left}', '{self.right}', how='{self.how}', predicate='{self.predicate}')"
 
     def interpret(self, gdfs):
-        return gpd.sjoin(gdfs[self.left], gdfs[self.right], \
-            how=self.how, predicate=self.predicate)
+        return gpd.sjoin(gdfs[self.left], gdfs[self.right], how=self.how, predicate=self.predicate)
 
 
 @dataclass(frozen=True, repr=False)
@@ -82,9 +80,7 @@ class Merge(GrammarRule):
     right_on: str
 
     def __repr__(self) -> str:
-        return f'pd.merge({self.left}, {self.right}, how={self.how}, \
-                left_on={self.left_on}, right_on={self.right_on})'
+        return f"pd.merge('{self.left}', '{self.right}', how='{self.how}', left_on='{self.left_on}', right_on='{self.right_on}')"
     
     def interpret(self, gdfs: dict[str, 'GrammarRule']) -> DataFrame:
-        return pd.merge(gdfs[self.left], gdfs[self.right], how=self.how, \
-                left_on=self.left_on, right_on=self.right_on)
+        return pd.merge(gdfs[self.left], gdfs[self.right], how=self.how, left_on=self.left_on, right_on=self.right_on)
