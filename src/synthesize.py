@@ -1,6 +1,16 @@
 from geopandas.testing import assert_geodataframe_equal
 
-from grammar import GDF, Dissolve
+from pandas import DataFrame
+from geopandas import GeoDataFrame
+from typing import Callable, Generator, TypeAlias
+from itertools import product, combinations
+
+from grammar import GrammarRule, Merge, SJoin, GDF, Dissolve
+from synth_input import GdfBindings
+
+
+CandidateGen:    TypeAlias = Generator[GrammarRule, None, None]
+LazySynthesizer: TypeAlias = Callable[[GdfBindings], CandidateGen]
 
 
 # grow applies every non-terminal in the grammar to every possible combination of
@@ -86,17 +96,6 @@ def synthesize(gdfs, target):
 
     print("No program found!")
 
-
-from pandas import DataFrame
-from geopandas import GeoDataFrame
-from typing import Callable, Generator, TypeAlias
-from itertools import product, combinations
-
-from grammar import GrammarRule, Merge, SJoin
-from synth_input import GdfBindings
-
-CandidateGen:    TypeAlias = Generator[GrammarRule, None, None]
-LazySynthesizer: TypeAlias = Callable[[GdfBindings], CandidateGen]
 
 def univariate(gdfs: GdfBindings) -> CandidateGen:
     'Generates the simplest programs first, including equivalents.'
