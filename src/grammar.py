@@ -1,7 +1,10 @@
+import pandas as pd
 import geopandas as gpd
 
 from typing import Protocol
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
+
+from pandas import DataFrame
 
 
 # The grammar for our synthesis engine.
@@ -56,9 +59,32 @@ class Dissolve(GrammarRule):
 class SJoin(GrammarRule):
     left: str
     right: str
+    _: KW_ONLY
+    how: str
+    predicate: str
 
     def __repr__(self):
-        return f"gpd.sjoin({self.left}, {self.right})"
+        return f"gpd.sjoin({self.left}, {self.right}, \
+            how={self.how}, predicate={self.predicate})"
 
     def interpret(self, gdfs):
-        return gpd.sjoin(gdfs[self.left], gdfs[self.right])
+        return gpd.sjoin(gdfs[self.left], gdfs[self.right], \
+            how=self.how, predicate=self.predicate)
+
+
+@dataclass(frozen=True, repr=False)
+class Merge(GrammarRule):
+    left: str
+    right: str
+    _: KW_ONLY
+    how: str
+    left_on: str
+    right_on: str
+
+    def __repr__(self) -> str:
+        return f'pd.merge({self.left}, {self.right}, how={self.how}, \
+                left_on={self.left_on}, right_on={self.right_on})'
+    
+    def interpret(self, gdfs: dict[str, 'GrammarRule']) -> DataFrame:
+        return pd.merge(gdfs[self.left], gdfs[self.right], how=self.how, \
+                left_on=self.left_on, right_on=self.right_on)

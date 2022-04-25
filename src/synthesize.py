@@ -90,7 +90,9 @@ def synthesize(gdfs, target):
 from pandas import DataFrame
 from geopandas import GeoDataFrame
 from typing import Callable, Generator
-from grammar import GrammarRule
+from grammar import GrammarRule, Merge, SJoin
+from collections import defaultdict
+from itertools import product, combinations
 
 GdfBindings = dict[str, DataFrame]
 CandidateGen = Generator[GrammarRule, None, None]
@@ -121,3 +123,52 @@ def lazy_synth(gdfs: GdfBindings, synthesizer: LazySynthesizer, target: DataFram
 def lazy_synthesize(gdfs: GdfBindings, target: DataFrame):
     'Lazy counterpart to `synthesize`'
     print(next(lazy_synth(gdfs, lazy_univariate, target), 'No program found!'))
+
+
+def cols_by_dtype(frame: DataFrame) -> dict[type, set[str]]:
+    out = defaultdict(set)
+    for k, v in dict(frame.dtypes).items():
+        out[v].add(k)
+    return dict(out)
+
+
+def binding_pairs(gdfs: GdfBindings):
+    yield from combinations(gdfs.items(), 2)
+
+
+def merge(gdfs: GdfBindings) -> CandidateGen:
+    for (l, l_frame), (r, r_frame) in binding_pairs(gdfs):
+        l_types = cols_by_dtype(l_frame)
+        r_types = cols_by_dtype(r_frame)
+        for k, l_v in l_types.items():
+            if r_v := r_types.get(k, None):
+                for l_col, r_col in product(l_v, r_v):
+                    # 'cross' throws weird exception
+                    for h in ("left", "right", "inner", "outer"):  
+                        yield Merge(l, r, how=h, left_on=l_col, right_on=r_col)
+
+
+def sjoin(gdfs: GdfBindings) -> CandidateGen:
+    for (l, l_frame), (r, r_frame) in binding_pairs(gdfs):
+        if not isinstance(l_frame, GeoDataFrame) or \
+            not isinstance(r_frame, GeoDataFrame):
+                continue
+        query_preds = l_frame.sindex.valid_query_predicates & \
+            r_frame.sindex.valid_query_predicates
+        for h in ("left", "right", "inner"):
+            for p in query_preds:
+                yield SJoin(l, r, how=h, predicate=p)
+
+
+def binop(gdfs: GdfBindings) -> CandidateGen:
+    merge_gen = merge(gdfs)
+    sjoin_gen = sjoin(gdfs)
+    for m_candidate, s_candidate in zip(merge_gen, sjoin_gen):
+        yield m_candidate
+        yield s_candidate
+    test = next(merge_gen, None)
+    if test is None:
+        yield from sjoin_gen
+    else:
+        yield test
+        yield from merge_gen
