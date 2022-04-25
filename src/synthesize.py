@@ -12,15 +12,12 @@ LazySynthesizer: TypeAlias = Callable[[GdfBindings], CandidateGen]
 
 
 def program(gdfs: GdfBindings) -> CandidateGen:
+    yield from map(GDF, gdfs.keys())
     yield from univariate(gdfs)
     yield from bivariate(gdfs)
 
 
 def univariate(gdfs: GdfBindings) -> CandidateGen:
-    'Generates the simplest programs first, including equivalents.'
-    for gdf_name in gdfs.keys():
-        yield GDF(gdf_name)
-
     for gdf_name, gdf in gdfs.items():
         for col in gdf.columns:
             if col != 'geometry':
