@@ -35,6 +35,7 @@ def benchmark(src: str):
     # sort by total time executing in a function's body (not including sub-calls)
     pr.run(src)
     pr.disable()
+    print()
     
     # don't allow benchmarking to dump in stdio
     f = StringIO()
@@ -42,11 +43,11 @@ def benchmark(src: str):
         pr.print_stats(sort='tottime')
     
     # truncate stdout to a dozen lines
-    print('\n'.join(f.getvalue().splitlines()[:12]))
+    print('\n'.join(f.getvalue().splitlines()[:8]))
 
 
 # benchmark_source can only be one line to avoid indentation issues
-def benchmark_source(): lazy_synthesize(input_gdfs, target)
+def benchmark_source(): assert lazy_synthesize(input_gdfs, target)
 src = getsource(benchmark_source)
 src = src[src.index(':') + 2:]
 

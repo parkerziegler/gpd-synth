@@ -48,9 +48,11 @@ def lazy_synth(gdfs: GdfBindings, synthesizer: LazySynthesizer, target: DataFram
     return filter(checker, synthesizer(gdfs))
 
 
-def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None:
+def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None | GrammarRule:
     'Lazy counterpart to `synthesize`'
-    print(next(lazy_synth(gdfs, program, target), 'No program found!'))
+    out = next(lazy_synth(gdfs, program, target), None)
+    print(out or 'No program found!')
+    return out
 
 
 def binding_pairs(gdfs: GdfBindings):
