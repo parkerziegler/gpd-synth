@@ -1,9 +1,8 @@
 import geopandas as gpd
 import os
-from grammar import SJoin
 
 from synth_input import GdfBindings
-from synthesize import bivariate, lazy_synth, lazy_synthesize, synthesize
+from synthesize import lazy_synthesize
 
 # Load our powerplants geodataframe.
 ca_power_plants = gpd.read_file(
@@ -72,4 +71,4 @@ input_gdfs = GdfBindings({
     'ca_power_plants': ca_power_plants,
 })
 
-benchmark('lazy_synthesize(bindings, target)')
+benchmark('lazy_synthesize(input_gdfs, target)')
