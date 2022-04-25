@@ -97,6 +97,11 @@ def synthesize(gdfs, target):
     print("No program found!")
 
 
+def program(gdfs: GdfBindings) -> CandidateGen:
+    yield from univariate(gdfs)
+    yield from bivariate(gdfs)
+
+
 def univariate(gdfs: GdfBindings) -> CandidateGen:
     'Generates the simplest programs first, including equivalents.'
     for gdf_name in gdfs.keys():
@@ -133,7 +138,7 @@ def lazy_synth(gdfs: GdfBindings, synthesizer: LazySynthesizer, target: DataFram
 
 def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None:
     'Lazy counterpart to `synthesize`'
-    print(next(lazy_synth(gdfs, univariate, target), 'No program found!'))
+    print(next(lazy_synth(gdfs, program, target), 'No program found!'))
 
 
 def binding_pairs(gdfs: GdfBindings):
