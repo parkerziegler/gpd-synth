@@ -1,8 +1,9 @@
 from pandas import DataFrame
 from collections import defaultdict
+from typing import TypeAlias
 
 
-ColumnTypes = dict[type, set[str]]
+ColumnTypes: TypeAlias = dict[type, set[str]]
 
 
 def cols_by_dtype(frame: DataFrame) -> ColumnTypes:
@@ -13,8 +14,11 @@ def cols_by_dtype(frame: DataFrame) -> ColumnTypes:
 
 
 class GdfBindings(dict[str, DataFrame]):
-    def __init__(self):
-        super().__init__()
+    ''' A dict from name(str) -> DataFrame that memoizes
+        ColumnTypes for each entry on generation
+    '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.frame_col_dtypes: dict[str, ColumnTypes] = dict()
 
     def get_cols_dtype(self, name: str) -> ColumnTypes:
