@@ -66,7 +66,7 @@ def synthesize(gdfs, target):
     for gdf_name, gdf in gdfs.items():
         for col in gdf.columns:
             if col != "geometry":
-                program_list.append(Dissolve(GDF(gdf_name), col))
+                program_list.append(Dissolve(gdf_name, col))
 
     # Binary operations here.
 
@@ -106,7 +106,7 @@ def univariate(gdfs: GdfBindings) -> CandidateGen:
     for gdf_name, gdf in gdfs.items():
         for col in gdf.columns:
             if col != 'geometry':
-                yield Dissolve(GDF(gdf_name), col)
+                yield Dissolve(gdf_name, col)
 
 
 def bivariate(gdfs: GdfBindings) -> CandidateGen:

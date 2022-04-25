@@ -44,15 +44,14 @@ class GDF(GrammarRule):
 
 @dataclass(frozen=True, repr=False)
 class Dissolve(GrammarRule):
-    gdf: GDF
+    gdf: str
     by: str
 
     def __repr__(self):
         return f'{self.gdf}.dissolve(by="{self.by}")'
 
     def interpret(self, gdfs):
-        gdf = self.gdf.interpret(gdfs)
-        return gdf.dissolve(by=self.by)
+        return gdfs[self.gdf].dissolve(by=self.by)
 
 
 @dataclass(frozen=True, repr=False)
