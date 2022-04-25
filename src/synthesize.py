@@ -87,9 +87,16 @@ def synthesize(gdfs, target):
     print("No program found!")
 
 
+from pandas import DataFrame
 from geopandas import GeoDataFrame
+from typing import Callable, Generator
+from grammar import GrammarRule
 
-def lazy_synthesize_all(gdfs: dict[str, GeoDataFrame]):
+GdfBindings = dict[str, DataFrame]
+CandidateGen = Generator[GrammarRule, None, None]
+LazySynthesizer = Callable[[GdfBindings], CandidateGen]
+
+def lazy_univariate(gdfs: GdfBindings) -> CandidateGen:
     'Generates the simplest programs first, including equivalents.'
     for gdf_name in gdfs.keys():
         yield GDF(gdf_name)
@@ -100,15 +107,17 @@ def lazy_synthesize_all(gdfs: dict[str, GeoDataFrame]):
                 yield Dissolve(GDF(gdf_name), col)
 
 
-def make_candidate_filter(gdfs: dict[str, GeoDataFrame], target: GeoDataFrame):
+def make_candidate_filter(gdfs: GdfBindings, target: DataFrame):
     'Returns a predicate that checks if a `program` over `gdfs` matches `target`'
-    return lambda program: gdfs_equal(evaluate_program(program, gdfs), target)
+    def candidate_filter(program: DataFrame) -> bool:
+        return gdfs_equal(evaluate_program(program, gdfs), target)
+    return candidate_filter
 
-def lazy_synthesizer(gdfs: dict[str, GeoDataFrame], target: GeoDataFrame):
+def lazy_synth(gdfs: GdfBindings, synthesizer: LazySynthesizer, target: DataFrame):
     'An iterator over all programs over `gdfs` that match `target`'
     checker = make_candidate_filter(gdfs, target)
-    return filter(checker, lazy_synthesize_all(gdfs))
+    return filter(checker, synthesizer(gdfs))
 
-def lazy_synthesize(gdfs: dict[str, GeoDataFrame], target: GeoDataFrame):
+def lazy_synthesize(gdfs: GdfBindings, target: DataFrame):
     'Lazy counterpart to `synthesize`'
-    print(next(lazy_synthesizer(gdfs, target), 'No program found!'))
+    print(next(lazy_synth(gdfs, lazy_univariate, target), 'No program found!'))
