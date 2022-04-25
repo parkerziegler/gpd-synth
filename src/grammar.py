@@ -6,6 +6,8 @@ from dataclasses import KW_ONLY, dataclass
 
 from pandas import DataFrame
 
+from synth_input import GdfBindings
+
 
 # The grammar for our synthesis engine.
 #
@@ -15,7 +17,7 @@ from pandas import DataFrame
 
 
 class GrammarRule(Protocol):
-    def interpret(self, gdfs: dict[str, 'GrammarRule']) -> gpd.GeoDataFrame:
+    def interpret(self, gdfs: GdfBindings) -> gpd.GeoDataFrame:
         raise NotImplementedError('Not Yet Implemented')
     
     def __repr__(self) -> str:
