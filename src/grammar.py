@@ -6,9 +6,6 @@ from dataclasses import KW_ONLY, dataclass
 
 from pandas import DataFrame
 
-from synth_input import GdfBindings
-
-
 # The grammar for our synthesis engine.
 #
 # Each part of the grammar is represented as a separate class with __init__, __repr__, and interpret methods.
@@ -17,7 +14,7 @@ from synth_input import GdfBindings
 
 
 class Candidate(Protocol):
-    def interpret(self, gdfs: GdfBindings) -> gpd.GeoDataFrame:
+    def interpret(self, gdfs) -> gpd.GeoDataFrame:
         raise NotImplementedError('Not Yet Implemented')
     
     def __repr__(self) -> str:

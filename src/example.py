@@ -1,8 +1,7 @@
 import geopandas as gpd
 import os
 
-from synth_input import GdfBindings
-from synthesize import lazy_synthesize
+from synthesize import GdfBindings, lazy_synthesize
 
 from inspect import getsource
 from cProfile import Profile
