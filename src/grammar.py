@@ -16,7 +16,7 @@ from synth_input import GdfBindings
 # interpret provides the actual code to execute behind the scenes when evaluating the synthesized program.
 
 
-class GrammarRule(Protocol):
+class Candidate(Protocol):
     def interpret(self, gdfs: GdfBindings) -> gpd.GeoDataFrame:
         raise NotImplementedError('Not Yet Implemented')
     
@@ -34,7 +34,7 @@ class GrammarRule(Protocol):
 
 
 @dataclass(frozen=True, repr=False)
-class GDF(GrammarRule):
+class GDF(Candidate):
     name: str
 
     def __repr__(self):
@@ -45,7 +45,7 @@ class GDF(GrammarRule):
 
 
 @dataclass(frozen=True, repr=False)
-class Dissolve(GrammarRule):
+class Dissolve(Candidate):
     gdf: str
     _: KW_ONLY
     by: str
@@ -58,7 +58,7 @@ class Dissolve(GrammarRule):
 
 
 @dataclass(frozen=True, repr=False)
-class SJoin(GrammarRule):
+class SJoin(Candidate):
     left: str
     right: str
     _: KW_ONLY
@@ -73,7 +73,7 @@ class SJoin(GrammarRule):
 
 
 @dataclass(frozen=True, repr=False)
-class Merge(GrammarRule):
+class Merge(Candidate):
     left: str
     right: str
     _: KW_ONLY
@@ -84,5 +84,5 @@ class Merge(GrammarRule):
     def __repr__(self) -> str:
         return f"pd.merge('{self.left}', '{self.right}', how='{self.how}', left_on='{self.left_on}', right_on='{self.right_on}')"
     
-    def interpret(self, gdfs: dict[str, 'GrammarRule']) -> DataFrame:
+    def interpret(self, gdfs: dict[str, 'Candidate']) -> DataFrame:
         return pd.merge(gdfs[self.left], gdfs[self.right], how=self.how, left_on=self.left_on, right_on=self.right_on)

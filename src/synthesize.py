@@ -3,11 +3,11 @@ from geopandas import GeoDataFrame
 from typing import Callable, Generator, TypeAlias
 from itertools import product, combinations
 
-from grammar import GrammarRule, Merge, SJoin, GDF, Dissolve
+from grammar import Candidate, Merge, SJoin, GDF, Dissolve
 from synth_input import GdfBindings
 
 
-CandidateGen:    TypeAlias = Generator[GrammarRule, None, None]
+CandidateGen:    TypeAlias = Generator[Candidate, None, None]
 
 
 def program(gdfs: GdfBindings) -> CandidateGen:
@@ -45,7 +45,7 @@ def bivariate(gdfs: GdfBindings) -> CandidateGen:
     yield from merge_gen
 
 
-def make_candidate_filter(gdfs: GdfBindings, target: DataFrame) -> Callable[[GrammarRule], bool]:
+def make_candidate_filter(gdfs: GdfBindings, target: DataFrame) -> Callable[[Candidate], bool]:
     'Returns a predicate that checks if a `program` over `gdfs` matches `target`'
     return lambda program: GeoDataFrame.equals(program.interpret(gdfs), target)
 
@@ -60,7 +60,7 @@ def lazy_synth(
     return filter(checker, synthesizer(gdfs))
 
 
-def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None | GrammarRule:
+def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None | Candidate:
     'Lazy counterpart to `synthesize`'
     out = next(lazy_synth(program, gdfs, target), None)
     print(out or 'No program found!')
@@ -72,7 +72,7 @@ def binding_pairs(gdfs: GdfBindings):
     return combinations(gdfs.items(), 2)
 
 
-def merge(gdfs: GdfBindings):
+def merge(gdfs: GdfBindings) -> CandidateGen:
     ''' Generates all valid `pd.merge` programs over `gdfs`
 
         Due to external implementations, ordering is pseudo-random
@@ -95,7 +95,7 @@ def merge(gdfs: GdfBindings):
                             left_on=l_col, right_on=r_col)
 
 
-def sjoin(gdfs: GdfBindings):
+def sjoin(gdfs: GdfBindings) -> CandidateGen:
     ''' Generates all valid `gpd.sjoin` programs over `gdfs`
 
         Due to external implementations, ordering is pseudo-random
