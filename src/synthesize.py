@@ -1,5 +1,3 @@
-from geopandas.testing import assert_geodataframe_equal
-
 from pandas import DataFrame
 from geopandas import GeoDataFrame
 from typing import Callable, Generator, TypeAlias
@@ -30,12 +28,10 @@ def evaluate_program(program, input_gdfs):
 
 # Check whether two GeoDataFrames are equivalent.
 def gdfs_equal(left, right):
-    try:
-        assert_geodataframe_equal(left, right, check_geom_type=True)
-
-        return True
-    except:
-        return False
+    # Optimization Note:
+    #   Using assert_geodataframe_equal adds substantial penalty for 
+    #   constructing and using a try/except block
+    return GeoDataFrame.equals(left, right)
 
 
 # Check whether a candidate program is observationally equivalent to an already
