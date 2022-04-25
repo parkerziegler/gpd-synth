@@ -47,6 +47,7 @@ class GDF(GrammarRule):
 @dataclass(frozen=True, repr=False)
 class Dissolve(GrammarRule):
     gdf: str
+    _: KW_ONLY
     by: str
 
     def __repr__(self):
