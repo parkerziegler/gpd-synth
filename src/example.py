@@ -58,18 +58,18 @@ def benchmark(src: str):
 # completed in:
 #   without dataclass optimization: ~0.36 secs
 #   with    dataclass optimization: ~0.35 secs
-# benchmark('lazy_synthesize(input_gdfs, target)')
+benchmark('lazy_synthesize(input_gdfs, target)')
 
 
 ca_counties = gpd.read_file(
     os.path.abspath("examples/sjoin/data/ca-counties.geojson")
 )
 
-sjoined = gpd.sjoin(ca_counties, ca_power_plants, how="left", predicate="within")
+target = gpd.sjoin(ca_counties, ca_power_plants, how="left", predicate="within")
 
-bindings = GdfBindings({
+input_gdfs = GdfBindings({
     'ca_counties': ca_counties,
     'ca_power_plants': ca_power_plants,
 })
 
-benchmark("print(next(lazy_synth(bindings, bivariate, sjoined), 'No program found!'))")
+benchmark('lazy_synthesize(bindings, target)')
