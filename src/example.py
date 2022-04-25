@@ -1,7 +1,9 @@
 import geopandas as gpd
 import os
+from grammar import SJoin
 
-from synthesize import lazy_synthesize, synthesize
+from synth_input import GdfBindings
+from synthesize import bivariate, lazy_synth, lazy_synthesize, synthesize
 
 # Load our powerplants geodataframe.
 ca_power_plants = gpd.read_file(
@@ -16,14 +18,17 @@ input_ca_power_plants = ca_power_plants.head(100)
 target = input_ca_power_plants.dissolve(by="County")
 
 
-input_gdfs = {
+input_gdfs = GdfBindings({
     "ca_power_plants": input_ca_power_plants,
-}
+})
 
 def benchmark(src: str):
     from cProfile import Profile
     from io import StringIO
     from contextlib import redirect_stdout
+
+    print('benchmarking: ')
+    print('\t', src)
 
     pr = Profile()
     pr.enable()
@@ -53,4 +58,18 @@ def benchmark(src: str):
 # completed in:
 #   without dataclass optimization: ~0.36 secs
 #   with    dataclass optimization: ~0.35 secs
-benchmark('lazy_synthesize(input_gdfs, target)')
+# benchmark('lazy_synthesize(input_gdfs, target)')
+
+
+ca_counties = gpd.read_file(
+    os.path.abspath("examples/sjoin/data/ca-counties.geojson")
+)
+
+sjoined = gpd.sjoin(ca_counties, ca_power_plants, how="left", predicate="within")
+
+bindings = GdfBindings({
+    'ca_counties': ca_counties,
+    'ca_power_plants': ca_power_plants,
+})
+
+benchmark("print(next(lazy_synth(bindings, bivariate, sjoined), 'No program found!'))")
