@@ -70,9 +70,9 @@ def binop(l: pd.DataFrame, r: pd.DataFrame):
         return
 
     sjoin_gen = sjoin(l, r)
-    for t0, t1 in zip(merge_gen, sjoin_gen):
-        yield t0
-        yield t1
+    for m_candidate, s_candidate in zip(merge_gen, sjoin_gen):
+        yield m_candidate
+        yield s_candidate
     done = ()
     test = next(merge_gen, done)
     if test is done:
