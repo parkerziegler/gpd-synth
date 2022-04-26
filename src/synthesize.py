@@ -34,7 +34,7 @@ class GdfBindings(dict[str, DataFrame]):
         return out
 
 
-CandidateGen:    TypeAlias = Generator[Candidate, None, None]
+CandidateGen: TypeAlias = Generator[Candidate, None, None]
 
 
 def program(gdfs: GdfBindings) -> CandidateGen:
@@ -134,8 +134,9 @@ def merge(gdfs: GdfBindings) -> CandidateGen:
                 for l_col, r_col in product(l_v, r_v):
                     # Note: 'cross' throws weird exception...
                     for h in ("left", "right", "inner", "outer"):  
-                        yield Merge(l_name, r_name, how=h, \
-                            left_on=l_col, right_on=r_col)
+                        c = Merge(l_name, r_name, how=h, left_on=l_col, right_on=r_col)
+                        yield c
+                        yield c.dual()
 
 
 def sjoin(gdfs: GdfBindings) -> CandidateGen:
@@ -152,4 +153,6 @@ def sjoin(gdfs: GdfBindings) -> CandidateGen:
             # and generate SJoins
             for h in ("left", "right", "inner"):
                 for p in query_preds:
-                    yield SJoin(l, r, how=h, predicate=p)
+                    c = SJoin(l, r, how=h, predicate=p)
+                    yield c
+                    yield c.dual()

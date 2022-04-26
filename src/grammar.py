@@ -67,6 +67,9 @@ class SJoin(Candidate):
 
     def interpret(self, gdfs):
         return gpd.sjoin(gdfs[self.left], gdfs[self.right], how=self.how, predicate=self.predicate)
+    
+    def dual(self) -> 'SJoin':
+        return SJoin(self.right, self.left, how=self.how, predicate=self.predicate)
 
 
 @dataclass(frozen=True, repr=False)
@@ -83,3 +86,6 @@ class Merge(Candidate):
     
     def interpret(self, gdfs: dict[str, 'Candidate']) -> DataFrame:
         return pd.merge(gdfs[self.left], gdfs[self.right], how=self.how, left_on=self.left_on, right_on=self.right_on)
+    
+    def dual(self) -> 'Merge':
+        return Merge(self.right, self.left, how=self.how, left_on=self.right_on, right_on=self.left_on)
