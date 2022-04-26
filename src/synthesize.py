@@ -2,36 +2,9 @@ from pandas import DataFrame
 from geopandas import GeoDataFrame
 from typing import Callable, Generator, TypeAlias
 from itertools import product, combinations
-from collections import defaultdict
 
+from synth_bindings import GdfBindings
 from grammar import Candidate, Merge, SJoin, GDF, Dissolve
-
-
-ColumnTypes: TypeAlias = dict[type, set[str]]
-
-
-def cols_by_dtype(frame: DataFrame) -> ColumnTypes:
-    out = defaultdict(set)
-    for k, v in dict(frame.dtypes).items():
-        out[v].add(k)
-    return dict(out)
-
-
-class GdfBindings(dict[str, DataFrame]):
-    ''' A dict from name(str) -> DataFrame that memoizes
-        ColumnTypes for each entry on generation
-    '''
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.frame_col_dtypes: dict[str, ColumnTypes] = dict()
-
-    def get_cols_dtype(self, name: str) -> ColumnTypes:
-        frame = self[name]
-        if coltypes := frame.get(name, None):
-            return coltypes
-        out = cols_by_dtype(frame)
-        self.frame_col_dtypes[name] = out
-        return out
 
 
 CandidateGen: TypeAlias = Generator[Candidate, None, None]
@@ -47,7 +20,7 @@ def program(gdfs: GdfBindings) -> CandidateGen:
     yield from bivariate(gdfs)
 
 
-def univariate(gdfs: GdfBindings) -> CandidateGen:
+def univariate(gdfs: dict[str, DataFrame]) -> CandidateGen:
     'Generates all valid univariate programs over `gdfs`'
     for gdf_name, gdf in gdfs.items():
         for col in gdf.columns:
@@ -87,20 +60,25 @@ def synth_matching(
     return filter(checker, synthesizer(gdfs))
 
 
-def lazy_synthesize(gdfs: GdfBindings, target: DataFrame) -> None | Candidate:
+def lazy_synthesize(gdfs: dict[str, DataFrame], target: DataFrame) -> None | Candidate:
     ''' Generates the minimum number of programs to get the first that 
         matches `target` over `gdfs`
     '''
+    if not isinstance(gdfs, GdfBindings):
+        gdfs = GdfBindings(gdfs)
     out = next(synth_matching(program, gdfs, target), None)
     print(out or 'No program found!')
     return out
 
 
-def synthesize_all(gdfs: GdfBindings, target: DataFrame) -> list[Candidate]:
+def synthesize_all(gdfs: dict[str, DataFrame], target: DataFrame) -> list[Candidate]:
     ''' Generates all programs over `gdfs` that match `target`
 
         Warning: May be *exceedingly* slow! User beware!
     '''
+    if not isinstance(gdfs, GdfBindings):
+        gdfs = GdfBindings(gdfs)
+    
     print('Synthesizing all may be very slow!')
     out = list()
     for p in synth_matching(program, gdfs, target):

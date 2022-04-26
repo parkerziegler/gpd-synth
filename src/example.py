@@ -1,7 +1,7 @@
 import geopandas as gpd
 import os
 
-from synthesize import GdfBindings, lazy_synthesize
+from synthesize import lazy_synthesize, synthesize_all
 
 from inspect import getsource
 from cProfile import Profile
@@ -21,9 +21,9 @@ input_ca_power_plants = ca_power_plants.head(100)
 target = input_ca_power_plants.dissolve(by="County")
 
 
-input_gdfs = GdfBindings({
+input_gdfs = {
     "ca_power_plants": input_ca_power_plants,
-})
+}
 
 def benchmark(src: str):
     print('benchmarking: ')
@@ -59,9 +59,9 @@ ca_counties = gpd.read_file(
 
 target = gpd.sjoin(ca_counties, ca_power_plants, how="left", predicate="within")
 
-input_gdfs = GdfBindings({
+input_gdfs = {
     'ca_counties': ca_counties,
     'ca_power_plants': ca_power_plants,
-})
+}
 
 benchmark(src)

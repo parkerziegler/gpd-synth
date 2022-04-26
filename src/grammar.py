@@ -14,7 +14,7 @@ from pandas import DataFrame
 
 
 class Candidate(Protocol):
-    def interpret(self, gdfs) -> gpd.GeoDataFrame:
+    def interpret(self, gdfs: dict[str, DataFrame]) -> gpd.GeoDataFrame:
         raise NotImplementedError('Not Yet Implemented')
     
     def __repr__(self) -> str:
