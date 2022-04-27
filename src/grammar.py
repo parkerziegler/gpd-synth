@@ -59,8 +59,8 @@ class SJoin(Candidate):
     left: str
     right: str
     _: KW_ONLY
-    how: str
-    predicate: str
+    how: Literal["left", "right", "inner"]
+    predicate: Literal["intersects", "within", "contains", "overlaps", "crosses", "touches"]
 
     def __repr__(self):
         return f"gpd.sjoin('{self.left}', '{self.right}', how='{self.how}', predicate='{self.predicate}')"
