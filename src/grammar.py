@@ -1,7 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 
-from typing import Protocol
+from typing import Literal, Protocol
 from dataclasses import KW_ONLY, dataclass
 
 from pandas import DataFrame
@@ -77,7 +77,7 @@ class Merge(Candidate):
     left: str
     right: str
     _: KW_ONLY
-    how: str
+    how: Literal["left", "right", "inner", "outer"]
     left_on: str
     right_on: str
 
