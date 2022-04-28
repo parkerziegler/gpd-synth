@@ -2,6 +2,7 @@ from pandas import DataFrame
 from geopandas import GeoDataFrame
 from typing import Callable, Generator, TypeAlias
 from itertools import product, combinations
+from frame_equality import geodataframe_equal
 
 from synth_bindings import GdfBindings
 from grammar import Candidate, Merge, SJoin, GDF, Dissolve
@@ -47,7 +48,7 @@ def bivariate(gdfs: GdfBindings) -> CandidateGen:
 
 def make_candidate_filter(gdfs: GdfBindings, target: DataFrame) -> Callable[[Candidate], bool]:
     'Returns a predicate that checks if a `program` over `gdfs` matches `target`'
-    return lambda program: GeoDataFrame.equals(program.interpret(gdfs), target)
+    return lambda program: geodataframe_equal(program.interpret(gdfs), target, check_geom_type=True)
 
 
 def synth_matching(
