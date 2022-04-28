@@ -41,7 +41,7 @@ def benchmark(src: str):
     with redirect_stdout(f):
         pr.print_stats(sort='tottime')
     
-    # truncate stdout to a dozen lines
+    # truncate benchmarking output to 8 lines
     print('\n'.join(f.getvalue().splitlines()[:8]))
 
 
