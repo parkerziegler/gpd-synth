@@ -1,8 +1,10 @@
+import pandas as pd
 import geopandas as gpd
 
-from typing import Protocol
-from dataclasses import dataclass
+from typing import Literal, Protocol
+from dataclasses import KW_ONLY, dataclass
 
+from pandas import DataFrame
 
 # The grammar for our synthesis engine.
 #
@@ -11,8 +13,8 @@ from dataclasses import dataclass
 # interpret provides the actual code to execute behind the scenes when evaluating the synthesized program.
 
 
-class GrammarRule(Protocol):
-    def interpret(self, gdfs: dict[str, 'GrammarRule']) -> gpd.GeoDataFrame:
+class Candidate(Protocol):
+    def interpret(self, gdfs: dict[str, DataFrame]) -> gpd.GeoDataFrame:
         raise NotImplementedError('Not Yet Implemented')
     
     def __repr__(self) -> str:
@@ -29,7 +31,7 @@ class GrammarRule(Protocol):
 
 
 @dataclass(frozen=True, repr=False)
-class GDF(GrammarRule):
+class GDF(Candidate):
     name: str
 
     def __repr__(self):
@@ -40,25 +42,50 @@ class GDF(GrammarRule):
 
 
 @dataclass(frozen=True, repr=False)
-class Dissolve(GrammarRule):
-    gdf: GDF
+class Dissolve(Candidate):
+    gdf: str
+    _: KW_ONLY
     by: str
 
     def __repr__(self):
         return f'{self.gdf}.dissolve(by="{self.by}")'
 
     def interpret(self, gdfs):
-        gdf = self.gdf.interpret(gdfs)
-        return gdf.dissolve(by=self.by)
+        return gdfs[self.gdf].dissolve(by=self.by)
 
 
 @dataclass(frozen=True, repr=False)
-class SJoin(GrammarRule):
+class SJoin(Candidate):
     left: str
     right: str
+    _: KW_ONLY
+    how: Literal["left", "right", "inner"]
+    predicate: Literal["intersects", "within", "contains", "overlaps", "crosses", "touches"]
 
     def __repr__(self):
-        return f"gpd.sjoin({self.left}, {self.right})"
+        return f"gpd.sjoin('{self.left}', '{self.right}', how='{self.how}', predicate='{self.predicate}')"
 
     def interpret(self, gdfs):
-        return gpd.sjoin(gdfs[self.left], gdfs[self.right])
+        return gpd.sjoin(gdfs[self.left], gdfs[self.right], how=self.how, predicate=self.predicate)
+    
+    def dual(self) -> 'SJoin':
+        return SJoin(self.right, self.left, how=self.how, predicate=self.predicate)
+
+
+@dataclass(frozen=True, repr=False)
+class Merge(Candidate):
+    left: str
+    right: str
+    _: KW_ONLY
+    how: Literal["left", "right", "inner", "outer"]
+    left_on: str
+    right_on: str
+
+    def __repr__(self) -> str:
+        return f"pd.merge('{self.left}', '{self.right}', how='{self.how}', left_on='{self.left_on}', right_on='{self.right_on}')"
+    
+    def interpret(self, gdfs: dict[str, 'Candidate']) -> DataFrame:
+        return pd.merge(gdfs[self.left], gdfs[self.right], how=self.how, left_on=self.left_on, right_on=self.right_on)
+    
+    def dual(self) -> 'Merge':
+        return Merge(self.right, self.left, how=self.how, left_on=self.right_on, right_on=self.left_on)

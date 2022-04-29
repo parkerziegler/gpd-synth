@@ -1,7 +1,12 @@
 import geopandas as gpd
 import os
 
-from synthesize import lazy_synthesize, synthesize
+from synthesize import lazy_synthesize, synthesize_all
+
+from inspect import getsource
+from cProfile import Profile
+from io import StringIO
+from contextlib import redirect_stdout
 
 # Load our powerplants geodataframe.
 ca_power_plants = gpd.read_file(
@@ -21,36 +26,42 @@ input_gdfs = {
 }
 
 def benchmark(src: str):
-    from cProfile import Profile
-    from io import StringIO
-    from contextlib import redirect_stdout
+    print('benchmarking: ')
+    print('\t', src)
 
     pr = Profile()
     pr.enable()
     # sort by total time executing in a function's body (not including sub-calls)
     pr.run(src)
     pr.disable()
+    print()
     
     # don't allow benchmarking to dump in stdio
     f = StringIO()
     with redirect_stdout(f):
         pr.print_stats(sort='tottime')
     
-    # truncate stdout to a dozen lines
-    print('\n'.join(f.getvalue().splitlines()[:12]))
+    # truncate benchmarking output to 8 lines
+    print('\n'.join(f.getvalue().splitlines()[:8]))
 
 
-# test code:
-#   synthesize(input_gdfs, target)
-# completed in:
-#   without dataclass optimization: ~9.1 secs
-#   with    dataclass optimization: ~8.9 secs
-#   with    dataclass and no print: ~8.8 secs
-# benchmark('synthesize(input_gdfs, target)')
+# benchmark_source can only be one line to avoid indentation issues
+def benchmark_source(): assert lazy_synthesize(input_gdfs, target)
+src = getsource(benchmark_source)
+src = src[src.index(':') + 2:]
 
-# test code:
-#   lazy_synthesize(input_gdfs, target)
-# completed in:
-#   without dataclass optimization: ~0.36 secs
-#   with    dataclass optimization: ~0.35 secs
-benchmark('lazy_synthesize(input_gdfs, target)')
+benchmark(src)
+
+
+ca_counties = gpd.read_file(
+    os.path.abspath("examples/sjoin/data/ca-counties.geojson")
+)
+
+target = gpd.sjoin(ca_counties, ca_power_plants, how="left", predicate="within")
+
+input_gdfs = {
+    'ca_counties': ca_counties,
+    'ca_power_plants': ca_power_plants,
+}
+
+benchmark(src)
