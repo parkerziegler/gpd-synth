@@ -85,16 +85,12 @@ def lazy_synthesize_gen(gdfs: dict[str, DataFrame], target: DataFrame):
         gdfs = GdfBindings(gdfs)
 
     checker = make_candidate_filter(gdfs, target)
-    synthesizer = program(gdfs)
-    candidate = next(synthesizer)
-    count = 0
-    found = False
-
-    while not found and candidate != None:
+    for count, candidate in enumerate(program(gdfs)):
         found = checker(candidate)
         yield [count, candidate, found]
-        candidate = next(synthesizer)
-        count += 1
+        if found:
+            break
+
 
 def synthesize_all(gdfs: dict[str, DataFrame], target: DataFrame) -> list[Candidate]:
     ''' Generates all programs over `gdfs` that match `target`
