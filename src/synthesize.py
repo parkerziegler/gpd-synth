@@ -77,6 +77,20 @@ def lazy_synthesize(gdfs: dict[str, DataFrame], target: DataFrame) -> None | Can
     print(out or 'No program found!')
     return out
 
+def lazy_synthesize_gen(gdfs: dict[str, DataFrame], target: DataFrame):
+    ''' Generates the minimum number of programs to get the first that 
+        matches `target` over `gdfs`
+    '''
+    if not isinstance(gdfs, GdfBindings):
+        gdfs = GdfBindings(gdfs)
+
+    checker = make_candidate_filter(gdfs, target)
+    for count, candidate in enumerate(program(gdfs)):
+        found = checker(candidate)
+        yield [count, candidate, found]
+        if found:
+            break
+
 
 def synthesize_all(gdfs: dict[str, DataFrame], target: DataFrame) -> list[Candidate]:
     ''' Generates all programs over `gdfs` that match `target`
